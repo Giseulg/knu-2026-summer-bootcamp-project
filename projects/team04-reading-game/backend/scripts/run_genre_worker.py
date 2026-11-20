@@ -4,8 +4,8 @@ from contextlib import closing
 import os
 from time import sleep
 
-from backend.app.genre_analysis import GENRES, openai_parser
-from backend.app.genre_jobs import enqueue, jobs_enabled, run_one
+from backend.app.genre_analysis import GENRES, AnalysisError, gemini_parser, openai_parser
+from backend.app.genre_jobs import enqueue, jobs_enabled, run_one, run_solar_research_map
 from backend.app.reading import now, open_db, write_transaction
 
 def main():
@@ -13,6 +13,7 @@ def main():
     mode = args_parser.add_mutually_exclusive_group()
     mode.add_argument("--once", action="store_true", help="Process one queued analysis and exit.")
     mode.add_argument("--enqueue", metavar="BOOK_ID", help="Queue a selected existing book.")
+    mode.add_argument("--solar-research-map", action="store_true", help="Generate and publish only the solar paper's research map.")
     args_parser.add_argument("--category", choices=GENRES, help="Explicitly classify the selected existing book.")
     args = args_parser.parse_args()
     if args.category and not args.enqueue:
@@ -28,6 +29,13 @@ def main():
                 args_parser.error("This book already has a queued, running or ready analysis.")
             if args.category and args.category != book["category"]:
                 conn.execute("UPDATE books SET category = ? WHERE id = ?", (args.category, args.enqueue))
+        return
+    if args.solar_research_map:
+        try:
+            run_solar_research_map(gemini_parser())
+        except AnalysisError as error:
+            args_parser.exit(1, f"Paper research map was not published: {error}\n")
+        print("Gemini research map published for paper-solar-overlap-2026.")
         return
     if not os.getenv("OPENAI_API_KEY") or not os.getenv("READING_OPENAI_MODEL"):
         args_parser.error("Set OPENAI_API_KEY and READING_OPENAI_MODEL in backend/.env.")

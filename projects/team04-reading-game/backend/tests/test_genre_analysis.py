@@ -27,9 +27,10 @@ def example_reply(schema, instructions, payload):
         if schema is PaperFinale:
             value["research_overview"] = [
                 {"stage": "problem", "title": "Whole-work claim", "explanation": FIRST,
-                 "prior_stage_indexes": [], "evidence": early},
+                 "prior_stage_indexes": [], "connections": [], "comparisons": [], "evidence": early},
                 {"stage": "result", "title": "Whole-work result", "explanation": LAST,
-                 "prior_stage_indexes": [0], "evidence": late},
+                 "prior_stage_indexes": [0], "comparisons": [], "evidence": late,
+                 "connections": [{"prior_index": 0, "reason": LAST, "evidence": late}]},
             ]
         return schema.model_validate(value)
 
@@ -57,7 +58,7 @@ def example_reply(schema, instructions, payload):
                           "analogy": "A lamp", "evidence": early}]
     if "logic" in fields:
         value["logic"] = [{"stage": "problem", "title": "Test research", "explanation": FIRST,
-                           "prior_stage_indexes": [], "evidence": early}]
+                           "prior_stage_indexes": [], "connections": [], "comparisons": [], "evidence": early}]
     return schema.model_validate(value)
 
 @pytest.fixture

@@ -27,6 +27,7 @@ STORY = "rain-return-box"
 LEGACY_REWARD_ID = "rain-frog"
 ANALYSIS_VERSION = 4
 CATALOG_CPU = "public-cpu-scheduling"
+CATALOG_SOLAR_PAPER = "paper-solar-overlap-2026"
 CASE_CARDS = [
     {"id": "key", "text": "민서가 손수건 아래에 열쇠를 뒀어요."},
     {"id": "note", "text": "민서가 반납함에 잠깐 넣지 말라는 쪽지를 붙였어요."},
@@ -172,6 +173,8 @@ def init_reading_db():
         if isinstance(conn, sqlite3.Connection):
             conn.executescript(SCHEMA + JOB_SCHEMA)
         with write_transaction(conn):
+            if get_pref(conn, "presentation_only", False):
+                return
             if conn.execute("SELECT 1 FROM preferences WHERE key = 'sample_seeded'").fetchone():
                 migrate_story_rewards(conn)
                 for book in rows(conn, "SELECT id, category FROM books WHERE id != ?", STORY):
@@ -525,6 +528,16 @@ def graph(book_id: str, conn: Db):
     state = progress(conn, book_id)
     stored = analysis_for(conn, book_id)
     genre = stored.get("genre")
+    if book_id == CATALOG_SOLAR_PAPER:
+        research_map = stored.get("researchMap") or {}
+        logic = research_map.get("logic", []) if research_map.get("source") in {"gemini", "openai"} else []
+        sections = [{key: value for key, value in section.items() if key != "logic"}
+                    for section in (genre or {}).get("sections", [])]
+        genre = {"category": "paper", "sections": [{"logic": logic, "summary": [], "personas": []}, *sections]}
+        total = one(conn, "SELECT MAX(ordinal) AS ordinal FROM passages WHERE book_id = ?", book_id)["ordinal"]
+        nodes, edges, analysis = visible_genre(conn, book_id, genre, state["confirmed"], state["confirmed"] == total)
+        return {"bookId": book_id, "until": confirmed_location(conn, state), "nodes": nodes, "edges": edges,
+                "analysis": analysis, "researchMapPending": not logic}
     if genre:
         total = one(conn, "SELECT MAX(ordinal) AS ordinal FROM passages WHERE book_id = ?", book_id)["ordinal"]
         nodes, edges, analysis = visible_genre(conn, book_id, genre, state["confirmed"], state["confirmed"] == total)
@@ -575,11 +588,16 @@ def visible_genre(conn, book_id, genre, boundary, complete):
         for key in ("summary", "personas", "imagery", "flow", "logic"):
             if key in section:
                 visible[key] = [public(item) | {"index": index} for index, item in enumerate(section[key])
-                                if evidence_end(item) <= boundary]
+                                if evidence_end(item) <= boundary
+                                and all(evidence_end(comparison) <= boundary for comparison in item.get("comparisons", []))]
         if "logic" in visible:
             visible_indexes = {item["index"] for item in visible["logic"]}
             for item in visible["logic"]:
                 item["prior_stage_indexes"] = [index for index in item["prior_stage_indexes"] if index in visible_indexes]
+                item["connections"] = [public(link) for link in item.get("connections", [])
+                                       if link["prior_index"] in visible_indexes and evidence_end(link) <= boundary]
+                item["comparisons"] = [public(comparison) for comparison in item.get("comparisons", [])
+                                       if evidence_end(comparison) <= boundary]
         sections.append(visible)
         item_ids = {}
         for index, item in enumerate(section.get("items", [])):
@@ -831,7 +849,9 @@ def cast_collectibles(conn, book_id, cast):
 
 @router.get("/me/collectibles")
 def collectibles(conn: Db):
-    result = cast_collectibles(conn, STORY, STORY_CAST)
+    result = []
+    if conn.execute("SELECT 1 FROM books WHERE id = ?", (STORY,)).fetchone():
+        result.extend(cast_collectibles(conn, STORY, STORY_CAST))
     for book in rows(conn, "SELECT book_id AS id, result FROM book_analysis"):
         activity = json.loads(book["result"])
         case = activity.get("case")

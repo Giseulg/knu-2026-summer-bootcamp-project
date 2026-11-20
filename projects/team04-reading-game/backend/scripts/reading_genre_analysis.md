@@ -15,6 +15,16 @@ python -m backend.scripts.run_genre_worker
 
 `--once`를 넣으면 작업 한 건을 처리하고 종료한다. 키나 모델명을 확인할 수 없으면 워커가 시작 오류를 표시한다. 워커가 꺼져 있으면 요청은 DB에 대기 상태로 남는다. 분석 화면의 **분석 다시 요청**은 실패한 작업을 다시 대기열에 넣는다.
 
+## 태양광 논문의 논리 구조도 생성
+
+`backend/.env`에 Google AI Studio에서 발급한 `GEMINI_API_KEY`와 사용할 모델 ID를 `READING_GEMINI_MODEL`로 설정한다. `team04-reading-game` 폴더에서 아래 명령을 실행한다.
+
+```powershell
+python -m backend.scripts.run_genre_worker --solar-research-map
+```
+
+워커는 `paper-solar-overlap-2026` 본문을 Gemini API에 보내 논리 구조도를 생성하고 원문 인용과 표 2·3의 비교 수치를 확인한다. 검증을 통과한 구조도를 기존 분석 레코드의 `researchMap`에 저장한다. 화면은 저장된 결과에서 읽음으로 확인한 범위를 표시한다.
+
 ## 사용 흐름
 
 1. 서재에서 UTF-8 TXT 하나를 등록하고 소설, 시, CS 서적, 논문 중 장르를 선택한다. 기존 활동 JSON을 같이 올리면 작성된 활동을 사용한다.

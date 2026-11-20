@@ -8,7 +8,7 @@ from random import Random
 import sqlite3
 from uuid import uuid4
 
-from .genre_analysis import VERSION, generate, openai_parser
+from .genre_analysis import VERSION, AnalysisError, generate, generate_solar_research_map, openai_parser
 
 logger = logging.getLogger(__name__)
 
@@ -74,6 +74,22 @@ def package_analysis(book_id, output):
             "cards": cards, "slots": slots, "answer": answer,
             "evidence": list(dict.fromkeys(cite["ordinal"] for cite in proof))}
     return questions, details, case
+
+def run_solar_research_map(parse):
+    from .reading import CATALOG_SOLAR_PAPER, analysis_for, open_db, rows, save_book_analysis, write_transaction
+
+    book_id = CATALOG_SOLAR_PAPER
+    query = "SELECT ordinal, text FROM passages WHERE book_id = ? ORDER BY ordinal"
+    with closing(open_db()) as conn:
+        passages = rows(conn, query, book_id)
+    logic = generate_solar_research_map(passages, parse)
+    with closing(open_db()) as conn, write_transaction(conn):
+        if passages != rows(conn, query, book_id):
+            raise AnalysisError("Paper changed during analysis. Run the worker again.")
+        stored = analysis_for(conn, book_id)
+        stored["researchMap"] = {"source": "gemini", "logic": logic}
+        save_book_analysis(conn, book_id, [], stored)
+
 
 def run_one(parse=None):
     from .reading import analysis_for, now, open_db, rows, save_book_analysis, write_transaction
