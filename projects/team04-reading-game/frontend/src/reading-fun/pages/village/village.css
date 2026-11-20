@@ -1,0 +1,30 @@
+/* 1.0 마을 장면. 화면의 주인공이므로 색·디테일은 여기에만 씀 */
+.scene{flex:1;position:relative;overflow:hidden;border-top:3px solid var(--umber);
+  background-color:var(--grass);
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' shape-rendering='crispEdges'%3E%3Cg fill='%236fae45'%3E%3Crect x='6' y='8' width='2' height='4'/%3E%3Crect x='9' y='10' width='2' height='2'/%3E%3Crect x='26' y='26' width='2' height='4'/%3E%3Crect x='29' y='28' width='2' height='2'/%3E%3C/g%3E%3Crect x='18' y='16' width='2' height='2' fill='%23a6d877'/%3E%3C/svg%3E");
+  background-size:40px 40px;image-rendering:pixelated}
+.scene .field{position:absolute;inset:0 0 168px}
+.scene .path-v{position:absolute;left:calc(50% - 20px);width:40px;top:18%;bottom:-168px;background:var(--dirt);box-shadow:inset 4px 0 0 var(--dirt-d),inset -4px 0 0 var(--dirt-d)}
+.scene .path-h{position:absolute;left:0;right:0;top:56%;height:40px;background:var(--dirt);box-shadow:inset 0 4px 0 var(--dirt-d),inset 0 -4px 0 var(--dirt-d)}
+.scene .pond{position:absolute;right:-12px;top:calc(56% + 64px);width:136px;height:88px;background:var(--water);border:3px solid var(--umber);box-shadow:inset 0 8px 0 var(--water-l)}
+.scene .deco{position:absolute;transform:translate(-50%,-100%)}
+.scene .chr{position:absolute;transform:translate(-50%,-100%);display:flex;flex-direction:column;align-items:center}
+.scene .chr .namecard{position:static;transform:none;margin-bottom:4px}
+.scene .chr .sh{width:28px;height:4px;margin-top:-2px;background:rgba(30,60,20,.3)}
+.scene .chr svg{animation:bob 1.2s steps(1) infinite}
+.scene .chr:nth-child(2n) svg{animation-delay:-.6s}
+@keyframes bob{50%{transform:translateY(-3px)}}
+
+.scene .plate{position:absolute;left:12px;top:12px;display:flex;align-items:center;gap:8px;height:36px;padding:0 12px;background:var(--wood);color:var(--sand);border:3px solid var(--umber);box-shadow:0 3px 0 rgba(30,14,5,.45);font:400 16px var(--font-title)}
+.scene .plate .num{font-size:12px;opacity:.85}
+
+.scene .quest{position:absolute;left:12px;right:12px;bottom:12px;padding:12px;background:var(--parch-l);border:3px solid var(--umber);box-shadow:0 4px 0 rgba(30,14,5,.5);display:flex;flex-direction:column;gap:12px}
+.scene .quest .t{font:500 16px var(--font-body);color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.scene .quest-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.scene .quest-actions .btn{min-width:0;min-height:40px;padding:6px;text-align:center;white-space:normal}
+@media (max-height:640px){
+  .scene .field{top:48px}
+  .scene .chr svg{max-width:42px;max-height:42px}
+  .scene .chr .namecard{font-size:10px;white-space:nowrap}
+}
+@media (prefers-reduced-motion: reduce){.scene .chr svg{animation:none}}

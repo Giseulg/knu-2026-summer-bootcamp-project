@@ -1,0 +1,26 @@
+import { expect, test } from '@playwright/test'
+
+test.use({ viewport: { width: 390, height: 844 }, reducedMotion: 'reduce' })
+
+test('CPU scheduling book contains paragraph effects, saved clues and a queue game', async ({ page }) => {
+  await page.goto('/library')
+  await page.locator('#nick').fill('독자')
+  await page.getByRole('button', { name: '전공 자료', exact: true }).click()
+  await page.getByRole('button', { name: '시작하기' }).click()
+  await page.getByRole('link', { name: '서재', exact: true }).click()
+  await page.getByRole('button', { name: /운영체제: CPU 스케줄링/ }).click()
+  await page.getByRole('button', { name: '이어서 읽기' }).click()
+  await expect(page).toHaveURL(/\/library\/b_os\/read$/)
+  const paragraph = page.locator('#p-1-1')
+  await paragraph.click()
+  await page.getByRole('button', { name: '문단 움직이기' }).click()
+  await expect(paragraph).toHaveClass(/reader-paragraph-motion/)
+  await page.getByRole('button', { name: '문장 단서 담기' }).click()
+  await expect(page.getByRole('button', { name: '단서 담음' })).toBeDisabled()
+  await page.getByRole('button', { name: 'FCFS 실행' }).click()
+  await expect(page.locator('.reader-cpu-game').getByRole('status')).toHaveText(/FCFS 평균 대기 시간 4.67/)
+  await page.getByRole('button', { name: 'SJF 실행' }).click()
+  await expect(page.locator('.reader-cpu-game').getByRole('status')).toHaveText(/SJF 평균 대기 시간 1.33/)
+  await expect(page.getByRole('list', { name: 'CPU 실행 순서' }).getByRole('listitem').first()).toContainText('작업 C')
+  await expect(page).toHaveURL(/\/library\/b_os\/read$/)
+})

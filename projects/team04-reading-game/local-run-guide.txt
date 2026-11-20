@@ -1,0 +1,12 @@
+독서 게임 실행
+이 파일이 있는 team04-reading-game 폴더에서 읽기 API를 실행합니다.
+
+python -m pip install -r backend/requirements.txt
+python -m uvicorn backend.app.reading_app:app --host 127.0.0.1 --port 8000 --reload --reload-dir backend/app
+
+Supabase를 사용할 때는 backend/.env에 READING_DATABASE_URL과 READING_DATABASE_SSLROOTCERT를 설정합니다. 자세한 내용은 backend/scripts/reading_postgres_migration.md를 참고하세요.
+
+별도 터미널에서 작업 폴더의 frontend로 이동해 npm ci, npm run dev:reading을 차례대로 실행합니다.
+
+기존 EPUB API 실행
+python -m uvicorn backend.app.main:app
